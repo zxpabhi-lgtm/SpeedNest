@@ -1,0 +1,405 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#101323">
+<title>SpeedNest — Internet Speed Test</title>
+<style>
+:root {
+  --bg: #101323;
+  --panel: rgba(255,255,255,.075);
+  --border: rgba(255,255,255,.13);
+  --text: #f4f3ff;
+  --muted: #a7abc2;
+  --purple: #b69cff;
+  --cyan: #7de8ed;
+  --green: #8ee6bd;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; min-height: 100vh; color: var(--text);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  background:
+    radial-gradient(ellipse at 12% 10%, #39305d 0, transparent 38%),
+    radial-gradient(ellipse at 90% 45%, #153e51 0, transparent 34%),
+    var(--bg);
+}
+button { font: inherit; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; }
+.wrap { width: min(1050px, 92%); margin: auto; padding: 26px 0 38px; }
+header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.brand { display:flex; align-items:center; gap:11px; font-size:20px; font-weight:800; letter-spacing:-.6px; }
+.logo {
+  display:grid; place-items:center; width:40px; height:40px;
+  border:1px solid var(--border); border-radius:14px;
+  background:linear-gradient(135deg,#c6a8ff,#78e5eb); color:#141629;
+  box-shadow:0 0 30px #a78bfa35;
+}
+.pill { color:var(--muted); border:1px solid var(--border); border-radius:30px; padding:8px 12px; font-size:12px; }
+.hero { text-align:center; padding:46px 0 28px; }
+.eyebrow { color:var(--cyan); font-size:11px; letter-spacing:3px; font-weight:800; }
+h1 { font-size:clamp(32px,6vw,55px); letter-spacing:-2px; margin:13px 0 10px; }
+h1 span { color:var(--purple); }
+.subtitle { color:var(--muted); line-height:1.7; font-size:14px; }
+.panel {
+  background:var(--panel); border:1px solid var(--border);
+  border-radius:25px; backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px);
+  box-shadow:0 24px 70px #0002;
+}
+.main { padding:26px; display:grid; grid-template-columns:1.15fr .85fr; gap:26px; align-items:center; }
+.gauge-area { text-align:center; min-width:0; }
+.gauge {
+  width:min(100%,330px); aspect-ratio:1; margin:0 auto 22px;
+  position:relative; display:grid; place-items:center;
+}
+.gauge svg { position:absolute; inset:0; width:100%; height:100%; transform:rotate(-90deg); overflow:visible; }
+.track { fill:none; stroke:#ffffff13; stroke-width:9; }
+.arc {
+  fill:none; stroke:url(#grad); stroke-width:9; stroke-linecap:round;
+  stroke-dasharray:565.49; stroke-dashoffset:565.49;
+  transition:stroke-dashoffset .22s ease;
+  filter:drop-shadow(0 0 8px #9d91ff75);
+}
+.gauge-content { position:relative; padding-top:4px; }
+.speed { font-size:clamp(45px,9vw,67px); line-height:1.05; font-weight:750; letter-spacing:-3px; font-variant-numeric:tabular-nums; }
+.unit { color:var(--muted); font-size:14px; margin-top:8px; }
+.status { color:var(--cyan); font-size:12px; margin-top:18px; }
+.start {
+  border:0; border-radius:15px; padding:15px 30px; min-width:190px;
+  color:#141629; font-weight:800;
+  background:linear-gradient(110deg,#c7a9ff,#83e9e9);
+  box-shadow:0 8px 32px #a99aff2c; transition:transform .2s,filter .2s;
+}
+.start:hover { transform:translateY(-2px); filter:brightness(1.08); }
+.start:disabled { opacity:.65; cursor:wait; transform:none; }
+.note { color:var(--muted); font-size:11px; margin:13px auto 0; max-width:290px; line-height:1.6; }
+.metrics { display:grid; gap:12px; }
+.metric { padding:20px; border:1px solid var(--border); background:#ffffff05; border-radius:18px; }
+.metric-top { display:flex; align-items:center; gap:9px; color:var(--muted); font-size:13px; }
+.dot { width:9px; height:9px; border-radius:50%; background:var(--purple); box-shadow:0 0 12px currentColor; }
+.metric:nth-child(2) .dot { background:var(--cyan); }
+.metric:nth-child(3) .dot { background:var(--green); }
+.metric-value { margin-top:13px; font-size:31px; font-weight:750; letter-spacing:-1px; }
+.metric-value small { font-size:12px; font-weight:500; color:var(--muted); letter-spacing:0; }
+.metric-desc { color:var(--muted); font-size:11px; margin-top:4px; }
+.section { margin-top:22px; padding:23px; }
+.section-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+h2 { font-size:16px; margin:0; }
+.sub { color:var(--muted); font-size:12px; margin-top:6px; }
+.small-btn { color:var(--muted); border:1px solid var(--border); background:#ffffff06; padding:8px 12px; border-radius:10px; font-size:12px; }
+.small-btn:hover { color:var(--text); background:#ffffff12; }
+.history-list { margin-top:18px; display:grid; gap:10px; }
+.history-item { display:flex; align-items:center; justify-content:space-between; gap:15px; padding:14px; border:1px solid var(--border); border-radius:14px; }
+.history-date { font-size:12px; color:var(--muted); margin-top:5px; }
+.history-speed { font-weight:750; font-size:17px; text-align:right; }
+.history-speed small { display:block; color:var(--muted); font-weight:400; font-size:11px; margin-top:4px; }
+.empty { text-align:center; padding:22px 5px; color:var(--muted); font-size:13px; line-height:1.7; }
+footer { text-align:center; padding:28px 0 0; color:var(--muted); font-size:11px; line-height:1.8; }
+footer a { color:var(--purple); text-decoration:none; }
+.pulse { animation:pulse 1.5s infinite; }
+@keyframes pulse { 50% { opacity:.45; } }
+@media(max-width:720px) {
+  .main { grid-template-columns:1fr; padding:19px; gap:26px; }
+  .hero { padding:35px 0 23px; }
+  .gauge { width:min(78vw,290px); }
+  .metrics { grid-template-columns:1fr 1fr; }
+  .metric:last-child { grid-column:1/-1; }
+  .metric { padding:15px; }
+  .metric-value { font-size:27px; }
+  .section { padding:18px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  *,*::before,*::after { animation-duration:.01ms!important; transition-duration:.01ms!important; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="brand"><div class="logo">S</div>SpeedNest<span style="color:var(--purple)">.</span></div>
+  <div class="pill">◉ &nbsp; Browser speed test</div>
+</header>
+
+<section class="hero">
+  <div class="eyebrow">YOUR CONNECTION, MEASURED</div>
+  <h1>Feel your <span>internet speed.</span></h1>
+  <div class="subtitle">A simple, real-world check of your internet connection.<br>Take a breath. Let's see how fast you are.</div>
+</section>
+
+<section class="panel main">
+  <div class="gauge-area">
+    <div class="gauge">
+      <svg viewBox="0 0 200 200" aria-hidden="true">
+        <defs><linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#c3a4ff"/>
+          <stop offset="100%" stop-color="#7de8ed"/>
+        </linearGradient></defs>
+        <circle class="track" cx="100" cy="100" r="90"/>
+        <circle class="arc" id="arc" cx="100" cy="100" r="90"/>
+      </svg>
+      <div class="gauge-content">
+        <div class="speed" id="speed">—</div>
+        <div class="unit">Mbps</div>
+        <div class="status" id="status" role="status" aria-live="polite">Ready when you are</div>
+      </div>
+    </div>
+    <button class="start" id="start">Start speed test ↗</button>
+    <p class="note">Measures real network transfers. Results depend on your device, connection and test server.</p>
+  </div>
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-top"><span class="dot"></span> Download</div>
+      <div class="metric-value" id="download">— <small>Mbps</small></div>
+      <div class="metric-desc">Receiving data</div>
+    </div>
+    <div class="metric">
+      <div class="metric-top"><span class="dot"></span> Upload</div>
+      <div class="metric-value" id="upload">— <small>Mbps</small></div>
+      <div class="metric-desc">Sending data</div>
+    </div>
+    <div class="metric">
+      <div class="metric-top"><span class="dot"></span> Latency / jitter</div>
+      <div class="metric-value" id="ping">— <small>ms</small></div>
+      <div class="metric-desc" id="jitter">Jitter: — ms</div>
+    </div>
+  </div>
+</section>
+
+<section class="panel section">
+  <div class="section-head">
+    <div><h2>Recent tests</h2><div class="sub">Saved only in this browser</div></div>
+    <button class="small-btn" id="clear">Clear history</button>
+  </div>
+  <div class="history-list" id="history"></div>
+</section>
+
+<footer>
+  <div>Made with care · SpeedNest</div>
+  <div>Measurements use <a href="https://speed.cloudflare.com/" target="_blank" rel="noopener noreferrer">Cloudflare's speed-test service</a>.</div>
+  <div>Results are estimates, not a guarantee of your ISP's maximum speed.</div>
+</footer>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const start = $("start");
+  const status = $("status");
+  const arc = $("arc");
+  const historyBox = $("history");
+  const CIRCUMFERENCE = 2 * Math.PI * 90;
+  arc.style.strokeDasharray = CIRCUMFERENCE;
+  arc.style.strokeDashoffset = CIRCUMFERENCE;
+
+  let busy = false;
+  let currentDownload = 0;
+  let savedHistory = [];
+
+  try {
+    const data = JSON.parse(localStorage.getItem("speednest-history") || "[]");
+    if (Array.isArray(data)) savedHistory = data.slice(0, 10);
+  } catch (_) {}
+
+  const fmt = (n, digits = 1) =>
+    Number.isFinite(n) ? n.toFixed(digits) : "—";
+
+  function metric(id, value, unit) {
+    $(id).innerHTML = `${fmt(value)} <small>${unit}</small>`;
+  }
+
+  function setGauge(value) {
+    const fraction = Math.max(0, Math.min(1, value / 500));
+    arc.style.strokeDashoffset = CIRCUMFERENCE * (1 - fraction);
+  }
+
+  function setStatus(text, active = false) {
+    status.textContent = text;
+    status.classList.toggle("pulse", active);
+  }
+
+  function renderHistory() {
+    historyBox.replaceChildren();
+
+    if (!savedHistory.length) {
+      const empty = document.createElement("div");
+      empty.className = "empty";
+      empty.textContent = "No tests yet. Your completed results will appear here.";
+      historyBox.append(empty);
+      return;
+    }
+
+    savedHistory.forEach(item => {
+      const row = document.createElement("div");
+      row.className = "history-item";
+
+      const left = document.createElement("div");
+      const date = document.createElement("div");
+      date.textContent = item.date;
+      const details = document.createElement("div");
+      details.className = "history-date";
+      details.textContent = `↑ ${fmt(item.upload)} Mbps · ${fmt(item.ping)} ms ping`;
+      left.append(date, details);
+
+      const right = document.createElement("div");
+      right.className = "history-speed";
+      right.textContent = `${fmt(item.download)} Mbps`;
+      const label = document.createElement("small");
+      label.textContent = "download";
+      right.append(label);
+
+      row.append(left, right);
+      historyBox.append(row);
+    });
+  }
+
+  function saveResult(result) {
+    savedHistory.unshift({
+      ...result,
+      date: new Date().toLocaleString()
+    });
+    savedHistory = savedHistory.slice(0, 10);
+
+    try {
+      localStorage.setItem("speednest-history", JSON.stringify(savedHistory));
+    } catch (_) {}
+    renderHistory();
+  }
+
+  // Every measurement transfers actual data to/from Cloudflare's
+  // public speed-test endpoint. Failed transfers are never shown as speeds.
+  async function transfer(type, bytes, durationSeconds = 8) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), durationSeconds * 1000);
+    const started = performance.now();
+    let transferred = 0;
+
+    try {
+      let url;
+      let options;
+
+      if (type === "download") {
+        url = `https://speed.cloudflare.com/__down?bytes=${bytes}&_=${Date.now()}`;
+        options = { method: "GET", cache: "no-store", mode: "cors", signal: controller.signal };
+      } else {
+        // Cloudflare's upload endpoint accepts a POST body.
+        url = `https://speed.cloudflare.com/__up?_=${Date.now()}`;
+        options = {
+          method: "POST",
+          cache: "no-store",
+          mode: "cors",
+          headers: { "Content-Type": "application/octet-stream" },
+          body: new Uint8Array(bytes),
+          signal: controller.signal
+        };
+      }
+
+      const response = await fetch(url, options);
+      if (!response.ok) throw new Error(`Test server returned HTTP ${response.status}`);
+
+      if (type === "download") {
+        if (!response.body) throw new Error("Streaming is not supported by this browser.");
+        const reader = response.body.getReader();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          transferred += value.byteLength;
+          const seconds = (performance.now() - started) / 1000;
+          if (seconds > 0) {
+            currentDownload = transferred * 8 / seconds / 1e6;
+            $("speed").textContent = fmt(currentDownload);
+            setGauge(currentDownload);
+          }
+        }
+      } else {
+        transferred = bytes;
+        await response.arrayBuffer();
+      }
+
+      const seconds = (performance.now() - started) / 1000;
+      if (!response.ok || seconds <= 0 || transferred <= 0) {
+        throw new Error("No valid transfer measurement was received.");
+      }
+      return transferred * 8 / seconds / 1e6;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  async function measureLatency() {
+    const samples = [];
+    const url = `https://speed.cloudflare.com/__down?bytes=0`;
+
+    for (let i = 0; i < 5; i++) {
+      const t0 = performance.now();
+      const response = await fetch(url + `&_=${Date.now()}-${i}`, {
+        cache: "no-store", mode: "cors"
+      });
+      if (!response.ok) throw new Error("Latency test failed.");
+      await response.arrayBuffer();
+      samples.push(performance.now() - t0);
+    }
+
+    const mean = samples.reduce((a, b) => a + b, 0) / samples.length;
+    const jitter = samples.slice(1).reduce((sum, v, i) =>
+      sum + Math.abs(v - samples[i]), 0) / (samples.length - 1);
+
+    return { ping: mean, jitter };
+  }
+
+  start.addEventListener("click", async () => {
+    if (busy) return;
+    busy = true;
+    start.disabled = true;
+    start.textContent = "Testing…";
+    currentDownload = 0;
+    $("speed").textContent = "—";
+    ["download", "upload"].forEach(id => metric(id, NaN, "Mbps"));
+    metric("ping", NaN, "ms");
+    $("jitter").textContent = "Jitter: — ms";
+    setGauge(0);
+
+    try {
+      setStatus("Measuring latency…", true);
+      const latency = await measureLatency();
+      metric("ping", latency.ping, "ms");
+      $("jitter").textContent = `Jitter: ${fmt(latency.jitter)} ms`;
+
+      setStatus("Measuring download…", true);
+      const download = await transfer("download", 25_000_000, 12);
+      metric("download", download, "Mbps");
+
+      setStatus("Measuring upload…", true);
+      const upload = await transfer("upload", 5_000_000, 12);
+      metric("upload", upload, "Mbps");
+
+      $("speed").textContent = fmt(download);
+      setGauge(download);
+      setStatus("Test completed ✓");
+      saveResult({ download, upload, ping: latency.ping, jitter: latency.jitter });
+    } catch (error) {
+      console.error("SpeedNest test error:", error);
+      setStatus("Test failed — please try again.");
+      $("speed").textContent = "—";
+      setGauge(0);
+      alert("The real speed test could not complete. Check your internet connection and try again. If the error persists, the test service may be unavailable or blocked by your network.");
+    } finally {
+      busy = false;
+      start.disabled = false;
+      start.textContent = "Test again ↗";
+    }
+  });
+
+  $("clear").addEventListener("click", () => {
+    savedHistory = [];
+    try { localStorage.removeItem("speednest-history"); } catch (_) {}
+    renderHistory();
+  });
+
+  renderHistory();
+})();
+</script>
+</body>
+</html>
